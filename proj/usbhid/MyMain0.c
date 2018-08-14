@@ -1,0 +1,716 @@
+/**************************************************************************//**
+ * @file main.c
+ * @brief USB HID keyboard device example.
+ * @author Energy Micro AS
+ * @version 1.2.1
+ ******************************************************************************
+ * @section License
+ * <b>(C) Copyright 2010 Energy Micro AS, http://www.energymicro.com</b>
+ ******************************************************************************
+ *
+ * This source code is the property of Energy Micro AS. The source and compiled
+ * code may only be used on Energy Micro "EFM32" microcontrollers.
+ *
+ * This copyright notice may not be removed from the source code nor changed.
+ *
+ * DISCLAIMER OF WARRANTY/LIMITATION OF REMEDIES: Energy Micro AS has no
+ * obligation to support this Software. Energy Micro AS is providing the
+ * Software "AS IS", with no express or implied warranties of any kind,
+ * including, but not limited to, any implied warranties of merchantability
+ * or fitness for any particular purpose or warranties against infringement
+ * of any proprietary rights of a third party.
+ *
+ * Energy Micro AS will not be liable for any consequential, incidental, or
+ * special damages, or any other relief, or for any claim by any third party,
+ * arising from your use of this Software.
+ *
+ *****************************************************************************/
+#include <stdio.h>
+#include "efm32.h"
+#include "em_cmu.h"
+#include "em_usb.h"
+#include "em_msc.h"
+#include "em_gpio.h"
+#include "em_emu.h"
+#include "em_wdog.h"
+#include "em_letimer.h"
+#include "m25pxx.h"
+#include "ble.h"
+#include "em_leuart.h"
+#include "globaldata.h"
+
+#include "retargetserial.h"
+
+#include "main.h"
+
+#include "config.h"
+#include "crc.h"
+#include "boot.h"
+#include "res.h"
+#include "framebufferctrl.h"
+
+//union _CHIP DevChip;
+union _UPGRADE_PARAM gUpgrade;
+uint32_t GulUpgradeFlag = 0;
+uint32_t GulPacketNum  = 0;
+uint32_t GulFlashOffset  = 0;
+
+uint32_t flashSize, flashPageSize;
+
+uint8_t sequenceNumber = 0;
+
+uint16_t UpdateType=0;
+
+/**************************************************************************//**
+ *
+ * This example shows how a HID keyboard can be implemented.
+ *
+ *****************************************************************************/
+
+
+/*** Typedef's and defines. ***/
+
+#define POLL_TIMER              0
+#define DEFAULT_POLL_TIMEOUT    24
+#define HEARTBEAT_MASK          0xF
+
+#define INTR_IN_EP_ADDR         0x81
+#define INTR_OUT_EP_ADDR        0x01
+
+
+#define BOOT_FW_VER_M           1
+#define BOOT_FW_VER_S           3
+
+#define FW_TYPE_BOOT            0
+#define FW_TYPE_APP             1
+
+//定义LED
+#define LED_GPIOPORT  (gpioPortC)
+#define LED_PIN   (10)
+#define LED_TOGGLE()     GPIO_PinOutToggle(LED_GPIOPORT, LED_PIN)
+#define LED_ON()       GPIO_PinOutSet(LED_GPIOPORT,LED_PIN )
+#define LED_OFF()      GPIO_PinOutClear(LED_GPIOPORT,LED_PIN )
+
+
+//FW宏定义
+#define FW_STARTADDR           0
+#define FW_APPSTART_ADDR       16     //片外flash中存储APP的起始地址,注意从0开始的。
+#define FWHEAD_LENGTH          16
+#define FWTYPE_MCU             1
+#define ONCEREADSIZE           2048   //每次读取的大小
+#define RESET_MCU()            SCB->AIRCR = 0x05FA0004 
+   
+#define FWTYPE_BLE             2
+   
+   
+   
+   
+EFM32_PACK_START( 1 )
+
+union _FW_INFO{
+  struct _INFO{
+    uint16_t fw_type;
+    uint16_t ver_num;
+    uint32_t fw_length;
+    uint16_t fw_crc;
+    uint32_t Rev1;
+    uint16_t Head_CRC;
+  }INFO;
+  uint8_t INFO_BUF[16];
+};
+union _FW_INFO FW_INFO;
+
+EFM32_PACK_END() 
+
+
+
+#include "descriptors.h"
+
+/*** Variables ***/
+//static int      pollTimeout;        /* Key poll rate, unit is ms. */
+//static uint8_t  idleRate;
+//static uint32_t  SetIdleBuffer;
+//static unsigned char fwHead[16] = {0}; /*用于保存fw文件头的字节*/
+
+//static char  wdogCount = 0;
+//
+//
+////看门狗初始化
+WDOG_Init_TypeDef init =
+{
+  .enable     = true,               /* Start watchdog when init done */
+  .debugRun   = false,              /* WDOG not counting during debug halt */
+  .em2Run     = true,               /* WDOG counting when in EM2 */
+  .em3Run     = true,               /* WDOG counting when in EM3 */
+  .em4Block   = false,              /* EM4 can be entered */
+  .swoscBlock = false,              /* Do not block disabling LFRCO/LFXO in CMU */
+  .lock       = false,              /* Do not lock WDOG configuration (if locked, reset needed to unlock) */
+  .clkSel     = wdogClkSelULFRCO,   /* Select 1kHZ WDOG oscillator */
+  .perSel     = wdogPeriod_16k,      /* Set the watchdog period to 4097 clock periods (ie ~2 seconds)*/
+};
+
+
+//LETIMER0的程序
+void LETIMER_setup(void)
+{
+ 
+  CMU_OscillatorEnable(cmuOsc_LFXO, true, true);//等待低频晶振工作正常
+  CMU_ClockSelectSet(cmuClock_LFA,cmuSelect_LFXO);//低能量定时器需要外部低频晶振作为时钟源。
+  CMU_ClockEnable(cmuClock_CORELE, true);//RTC和所有的低功耗外设都要用CORELF，同时也是看门狗的时钟源
+  CMU_ClockEnable(cmuClock_LETIMER0,true);//使能自己的时钟
+  
+  LETIMER_Init_TypeDef leTimerinit = LETIMER_INIT_DEFAULT;//先进行默认初始化
+  
+  leTimerinit.debugRun = true;
+  leTimerinit.comp0Top = true;
+  LETIMER_IntEnable(LETIMER0,LETIMER_IF_COMP0);//比较器0中断使能	
+  NVIC_EnableIRQ(LETIMER0_IRQn);//打开NVIC中断
+  LETIMER_CompareSet(LETIMER0,0,500);//设置比较器0的初始值定时15ms
+  LETIMER_Init(LETIMER0,&leTimerinit);
+  
+}
+
+volatile unsigned char efmCount = 0;
+volatile unsigned char bleCount = 0;
+  
+//低功耗定时器中断
+void LETIMER0_IRQHandler(void)
+{
+
+    LETIMER_IntClear(LETIMER0,LETIMER_IF_COMP0);//清除比较器0的中断标志
+	efmCount++;
+	bleCount++;
+	if((FW_INFO.INFO.fw_type == 1) && (efmCount == 12))
+	{
+		efmCount = 0;
+		LED_TOGGLE();
+	}
+	else if((FW_INFO.INFO.fw_type == 2) && (bleCount == 30))
+	{
+		bleCount = 0;
+	    LED_TOGGLE();	
+	}
+ 
+}
+
+//获取片内flash的大小信息
+void FLASH_CalcPageSize(void)
+{
+  uint8_t family = *(uint8_t*)0x0FE081FE;
+
+  flashSize = *(uint16_t*)0x0FE081F8 * 1024;
+
+  flashPageSize = 4096;                 /* Assume Giant, 'H' */
+
+  if ( family == 74 )
+  {
+    flashPageSize = 2048;               /* Leopard, 'J' */
+  }
+  else if ( family == 75 )
+  {
+    flashPageSize = 2048;               /* Leopard, 'W' */
+  }
+}
+
+
+//把片外flash的内容读出来，并写入片内flash,每次从片外读2k,然后写入
+void  InsideFlashWR(void)
+{
+  unsigned int i ,j ;
+  unsigned char appBuf[ONCEREADSIZE] = {0};
+  unsigned int integer = 0;
+  unsigned int decimal = 0;
+  int align4 = 0;//4字节对齐
+
+  
+   FLASH_CalcPageSize();//先获取片内flash的信息
+   MSC_Init();//对片内flash进行初始化，下面要擦除和写入
+   
+ /*
+   直到这里全局变量FW_INFO.INFO.fw_length都是最初的读到的值，没有变化，
+   为什么这里计算会出错?
+ */  
+   
+  integer = FW_INFO.INFO.fw_length / ONCEREADSIZE;
+  decimal = FW_INFO.INFO.fw_length % ONCEREADSIZE;
+
+  for(i = 0;i < integer;i++)//处理2k整数部分
+  {
+	   while(IsFlashBusy());//这里2个检测片外flash是否在忙
+       FlashRead((FW_APPSTART_ADDR+ONCEREADSIZE*i), appBuf, ONCEREADSIZE);//每次读出片外的2k
+       while(IsFlashBusy());
+	   
+       MSC_ErasePage((uint32_t *)(BOOTLOADER_SIZE + i*ONCEREADSIZE));//每次擦除片内的2k
+	  
+//通过查看擦除全部成功 。      
+       for(j = 0; j < ONCEREADSIZE;j++)
+       {
+        if(*((uint8_t *)(BOOTLOADER_SIZE + i*ONCEREADSIZE+j))!=0xFF)//如果没有擦除正确就死机
+          while(1);
+       }
+       MSC_WriteWord((uint32_t *)(BOOTLOADER_SIZE + i*ONCEREADSIZE), appBuf , ONCEREADSIZE);//每次写2k
+	   
+	   WDOG_Feed();	
+	   SysCtlDelay(1000);	   
+//这里需要较长时间，在此喂狗	      	   
+  }
+  
+  if(decimal > 0)//确定还有剩余
+  {
+	  while(IsFlashBusy());
+      FlashRead((FW_APPSTART_ADDR+ONCEREADSIZE*integer), appBuf, decimal);//appBuf中存储的有上次的数据。这里再读取一次，数据只有一部分
+      while(IsFlashBusy());
+	  
+      MSC_ErasePage((uint32_t *)(BOOTLOADER_SIZE + integer*ONCEREADSIZE));//再多擦除一个页，用来写最后剩下的不足一个页的内容
+      for(j = 0; j < decimal;j++)
+      {
+        if(*((uint8_t *)(BOOTLOADER_SIZE + integer*ONCEREADSIZE+j)) != 0xff)
+          while(1);
+      }
+	  
+      if((decimal % 4) == 0)//说明剩余的字节数能被4整除可以直接写到flash
+      {
+         MSC_WriteWord((uint32_t *)(BOOTLOADER_SIZE + integer*ONCEREADSIZE), appBuf , decimal);  
+		 WDOG_Feed();
+		 SysCtlDelay(1000);
+      }
+      else//
+      {
+          align4 = decimal % 4;
+          switch(align4)
+          {
+            case 1://需要补3个字节,补的字节都是0xff
+              {
+                  appBuf[decimal +0] = 0xff;//注意补的起始地址
+                  appBuf[decimal +1] = 0xff;
+                  appBuf[decimal +2] = 0xff;
+                  MSC_WriteWord((uint32_t *)(BOOTLOADER_SIZE + integer*ONCEREADSIZE), appBuf , decimal+3); 
+				  WDOG_Feed();
+				  SysCtlDelay(1000);
+              }break;
+              
+             case 2://需要补3个字节,补的字节都是0xff
+              {
+                  appBuf[decimal +0] = 0xff;
+                  appBuf[decimal +1] = 0xff;
+                  MSC_WriteWord((uint32_t *)(BOOTLOADER_SIZE + integer*ONCEREADSIZE), appBuf , decimal+2);  
+				  WDOG_Feed();
+				  SysCtlDelay(1000);
+              }break;
+             case 3://需要补3个字节,补的字节都是0xff
+              {
+                  appBuf[decimal +0] = 0xff;
+                  MSC_WriteWord((uint32_t *)(BOOTLOADER_SIZE + integer*ONCEREADSIZE), appBuf , decimal+1);  
+				  WDOG_Feed();
+				  SysCtlDelay(1000);
+              }break;
+          default:break;
+          }
+      }
+  }  
+}
+
+void  CalcInsideFlashCRCandWrIn(void)
+{
+    unsigned char i = 0;
+    unsigned char temp[4] = {0};
+    unsigned int  inSideFlashCRC = 0;//片内flash从bootloadersize到最后4个字节的CRC
+	unsigned char ok = 1;
+ 
+   for (i = 0; i < 16; i++) 
+    {
+        DevChip.EFM32DeviceInfo[i] = *((unsigned char *)(EFM32_ADDRESS + i));//从EFM32_ADDRESS地址后的16个字节拿出来。
+    }
+   
+   inSideFlashCRC = CRC_calc((uint8_t *)BOOTLOADER_SIZE, (uint8_t *)(DevChip.Device.memFlash*1024 - 8));
+   //把上面的CRC写入到片上flash的最后4个字节处
+   temp[0] = (unsigned char)(inSideFlashCRC & 0xff);
+   temp[1] = (unsigned char)((inSideFlashCRC >> 8) & 0xff);
+   temp[2] = (unsigned char)((inSideFlashCRC >> 16)& 0xff);
+   temp[3] = (unsigned char)((inSideFlashCRC >> 24)& 0xff);  //使用（uint32_t*）这种直接地址访问是首先读到的是高字节
+   
+   FLASH_CalcPageSize();//先获取片内flash的信息
+   MSC_Init();
+   
+   ok = MSC_ErasePage((uint32_t*)0x3FC00);//擦除第254-256k的区域,即最后一页
+   
+   WDOG_Feed();
+  
+   while(ok != 0);
+   
+   MSC_WriteWord((uint32_t *)(DevChip.Device.memFlash*1024 - 4), temp , 4);//写入整体的CRC,写的地址是片内flash的最后4个字节
+   SysCtlDelay(1000);
+}
+
+
+  
+void DealError(void)
+{
+  unsigned char i = 0;
+  unsigned int flashCrc = 0;
+  
+  for (i = 0; i < 16; i++) 
+  {
+      DevChip.EFM32DeviceInfo[i] = *((unsigned char *)(EFM32_ADDRESS + i));//从EFM32_ADDRESS地址后的16个字节拿出来。
+  }
+   
+   flashCrc = CRC_calc((uint8_t *)BOOTLOADER_SIZE, (uint8_t *)(DevChip.Device.memFlash*1024 - 8));//注意这里计算的范围是末尾倒数第8个字节前的。
+
+   
+   if(flashCrc != (*((uint32_t *)(DevChip.Device.memFlash*1024 - 4))))
+   {
+      RESET_MCU();//进行复位
+   }
+   else//相等则去执行App。在跳之前关掉看门狗，这里关掉看门狗后系统回不停的复位。
+   { 
+	   WDOG_Feed();
+	   
+	   SysCtlDelay(500);
+	  
+       BOOT_boot();//跳转至App处运行。
+   }  
+}
+
+
+void McuFwUpdate(void)
+{
+   unsigned int  calcCRC = 0;
+  
+   calcCRC = FlashCRC(0+16,FW_INFO.INFO.fw_length);//计算整个片外flash的CRC
+                
+              //如果对片外flash计算的CRC等于保存在文件头中CRC，则可以读取flash的值并写到片内flash            
+      if(calcCRC == FW_INFO.INFO.fw_crc)
+      {
+
+            InsideFlashWR();//读取片外flash中的内容并写到片内。下面要计算片内flash的CRC
+			
+            calcCRC = CRC_calc((uint8_t *)BOOTLOADER_SIZE,(uint8_t *)(BOOTLOADER_SIZE+FW_INFO.INFO.fw_length-1));//注意这里要减1，注意是从0开始。
+           
+            if(calcCRC == FW_INFO.INFO.fw_crc)//如果写入到片内Flash的App的CRC与片外文件头中存储的CRC不一样要重新写
+            { 
+	
+              //计算片内flash的CRC，并把它写到最后4个字节处
+               CalcInsideFlashCRCandWrIn();
+               
+               //擦除片外flash的文件头
+
+			   while(IsFlashBusy());
+			   
+               FlashSectorErase( 0 );
+               
+               while(IsFlashBusy()); 
+
+               RESET_MCU();//进行复位     
+            } 
+            else//搬移到片内flash中数据的CRC与片外flash的文件头中记录的不一样,直接退出到异常处理。
+            { 
+			  DealError(); 
+            }
+      }
+      else//片外flash数据的CRC与其文件头中存储的不一样
+      {
+       DealError(); 
+      }
+}
+
+void ReadBLEFwFromExflashAndWrIn(void)
+{
+  
+  unsigned char bleFwBuf[128] = {0};
+  int integer = 0;
+  int decimal = 0;
+  int temp    = 0;
+  int i = 0;
+
+ 
+  integer = FW_INFO.INFO.fw_length / 128; //  总共有1952个128byte
+  decimal = FW_INFO.INFO.fw_length % 128; //  这里是0
+  
+  for( i = 0; i < integer;i++)
+  {
+	 
+	 while(IsFlashBusy());
+	  
+  	 FlashRead((FW_APPSTART_ADDR+128*i), bleFwBuf, 128);//每次读出128字节
+	
+	 while(IsFlashBusy());
+	 
+	 WriteCC254xFlash(bleFwBuf);
+	 
+	 char countTx= 60; 
+	 
+	 while(!BLE_Responsed  && countTx )//当BLE收到数据后，会给mcu一个应答，在中断中如果检测到这个应答则把该变量置位true
+	 {
+       countTx--;
+	   SysCtlDelay(10000);//如果这里的延时少会丢包。
+	 }//每发送1包数据，要给足够的时间让BLE响应，然后把应答发送回了。
+	 
+	 BLE_Responsed = false;		
+	 
+//这个搬移时间较长，恐遇异常，故在此喂狗	 
+		WDOG_Feed();
+	
+  }
+  
+  if(decimal > 0)
+  {
+	temp = decimal % 4;//BLE的flash也要4个字节对齐写。
+	
+	FlashRead((FW_APPSTART_ADDR+128*integer), bleFwBuf, decimal);//本次只读剩下的decimal字节	
+	   
+	 	while(IsFlashBusy());
+	
+	if(temp == 0)
+	{
+	   
+	   MyLEUARTSentByDma(UART_CMD_UPGRADE_DATA,bleFwBuf,decimal);
+	   
+	   WDOG_Feed();
+	   
+	   while(!BLE_Responsed);//当BLE收到数据后，会给mcu一个应答，在中断中如果检测到这个应答则把该变量置位true
+	    BLE_Responsed = false;
+	}
+	else
+	{
+	   WDOG_Feed();
+		switch(temp)
+		{
+		case 1:
+		  {
+		  	bleFwBuf[decimal+0] = 0xff;
+			bleFwBuf[decimal+1] = 0xff;
+			bleFwBuf[decimal+2] = 0xff;
+			
+			MyLEUARTSentByDma(UART_CMD_UPGRADE_DATA,bleFwBuf,decimal);
+	   
+		   while(!BLE_Responsed);//当BLE收到数据后，会给mcu一个应答，在中断中如果检测到这个应答则把该变量置位true
+		   BLE_Responsed = false;
+		  
+		  }break;
+		case 2:
+		  {
+		  	bleFwBuf[decimal+0] = 0xff;
+			bleFwBuf[decimal+1] = 0xff;
+			
+			MyLEUARTSentByDma(UART_CMD_UPGRADE_DATA,bleFwBuf,decimal);
+	   
+		   while(!BLE_Responsed);//当BLE收到数据后，会给mcu一个应答，在中断中如果检测到这个应答则把该变量置位true
+			BLE_Responsed = false;	  
+		  
+		  }break;
+		case 3:
+		  {
+		  	bleFwBuf[decimal+0] = 0xff;
+			
+			MyLEUARTSentByDma(UART_CMD_UPGRADE_DATA,bleFwBuf,decimal);
+	   
+		   while(!BLE_Responsed);//当BLE收到数据后，会给mcu一个应答，在中断中如果检测到这个应答则把该变量置位true
+			BLE_Responsed = false;	  
+		 }break;
+		default:break;
+		}
+	}	
+  }  
+}
+
+
+
+/*
+注意IAR编译优化级别的选择不同会对程序产生很大的不同：
+当优化级别是High时，程序中的有些变量可能被编译器优化掉，导致不起作用。
+另外调试程序时：注意调试模式和发行模式的优化级别要选择一致，否则有可能在调试模式能通过，但是在发行版本中就同不过
+*/
+void NewBleFwUpdate(void)
+{   
+	unsigned int  calcCRC = 0;
+    volatile char countChange = 160;
+	volatile char countStart = 10;
+	volatile char countCrc = 10;
+	
+	SysCtlDelay(8000);
+		
+	while(BLE_ONLINE == false);
+	
+	//获取状态信息	
+	memcpy(BLE_DevChip.BLE_DeviceInfo,&CopyRxBuff[UART_ID_DATA+1],sizeof(BLE_DevChip.BLE_DeviceInfo));
+
+	calcCRC = FlashCRC(0+16,FW_INFO.INFO.fw_length);//计算整个片外flash的CRC
+	
+	if(calcCRC == FW_INFO.INFO.fw_crc)
+	{
+		if(BLE_DevChip.BLE_Device.WORKSTA == 1)//表示App状态
+		{
+			AppToBoot();//发送转换命令后，等待响应
+			
+			while(BLE_DevChip.BLE_Device.WORKSTA && countChange)
+			{
+			  memcpy(BLE_DevChip.BLE_DeviceInfo,&CopyRxBuff[UART_ID_DATA+1],sizeof(BLE_DevChip.BLE_DeviceInfo));
+			  SysCtlDelay(50000);
+			  countChange--;
+			}	
+			
+			if(countChange == 0)//状态转换超时后直接退出
+			{
+				DealError();	
+			}
+		}
+		
+		
+	    SysCtlDelay(800000);//要给足够的延时使第一条命令执行完毕给予应答后，在发送下一条命令。
+	  
+		
+	    MyBLE_Update_Start(); //必须确保发送升级命令前，器件处于boot状态，才能接收升级开始的命令。
+	  	  
+		while(!BLE_Responsed);
+
+	  
+		BLE_Responsed = false;
+				
+//		SysCtlDelay(5000);
+					
+		ReadBLEFwFromExflashAndWrIn();	//这个写的时间比较久	,从它里面出来BLE_response=false  
+		
+		WDOG_Feed();
+		
+		SysCtlDelay(50000);
+		
+		BLE_Update_End(FW_INFO.INFO.fw_crc);//发送结束升级命令,并附带上BLE的FW的CRC
+		
+		WDOG_Feed();//这里等待时间较长，在此喂狗。
+		
+		while(!BLE_Responsed);//发送完升级命令也会有应答的。
+		BLE_Responsed = false;
+		
+	
+		while(!crccheck );//检测的是应答的最后部分，所以在延时后检测。
+		
+		crccheck = false;				
+		
+				
+		while(IsFlashBusy());
+	   
+		FlashSectorErase( 0 );	
+	   
+		while(IsFlashBusy());
+		
+		
+		RESET_MCU();//当对BLE升级结束后对整个系统复位。
+	}
+	else
+	{
+		DealError();
+	}		
+}
+
+
+
+int main(void)
+{
+  
+//下面变量在使用informemory时在使用  
+//  char i = 0;
+//  unsigned char inforDataR[4]  ={0};
+//  void const* inforDataW    ="EWM0";
+//  unsigned char buf[4] = {1,2,3,4};
+    unsigned int  fwHeadCRC   = 0;
+ 	
+  
+#ifndef DBG    
+   SCB->VTOR = 0x20000000;
+#endif
+   
+
+  LETIMER_setup(); //看门狗和led闪烁
+   
+//---------BLE的操作   
+  BLE_INIT();
+  
+  FLASH_POWER_BACK();//电源一致打开
+
+  SysCtlDelay(80000);
+     	
+  //---------片外flash的操作
+  M25Pxx_INIT();   //实际上执行上面的语句，就把BLE转换到boot状态了,这里收到数据
+
+
+  GetFlashCapacity(0x37);//片外flash信息获取
+  
+ 
+  WDOG_Init(&init);
+  
+  
+//读取Information block的USER data区的数据
+   MSC_Init();
+
+////现在先不检测infor memory的信息  
+////  for(i = 0; i < 4; i++)
+////    inforDataR[i] = *(unsigned char*)(EFM32_INFOBLOCK+i);
+////  
+////  
+////  if((inforDataR[0] == 'E') && (inforDataR[1] == 'W') && (inforDataR[2] == 'M') && (inforDataR[3] == '0'))
+////  {
+      SysCtlDelay(10000);
+      FlashRead(FW_STARTADDR , FW_INFO.INFO_BUF , FWHEAD_LENGTH);//读文件头
+      while(IsFlashBusy());
+
+           
+      fwHeadCRC = CRC_calc(&FW_INFO.INFO_BUF[0], &FW_INFO.INFO_BUF[13]);//把读到的文件头进行CRC校验
+
+      if(fwHeadCRC == FW_INFO.INFO.Head_CRC)//当文件头是对的。
+      {
+
+          switch(FW_INFO.INFO.fw_type)
+          {
+           case FWTYPE_MCU:
+            {
+                McuFwUpdate();
+            }break;
+            
+           case FWTYPE_BLE ://类型号是2，BLE的
+            {
+                NewBleFwUpdate();   
+            }break; 
+           default://应对首次烧写，片外flash中没有数据的情况
+			{
+			   DealError();
+			   break;
+			}
+          } 
+       }
+      else//文件头的CRC不对
+      {
+
+       DealError();
+      } 
+	  
+	  	  
+    
+//  else//进入说明是第一次烧录
+//  {
+//      MSC_ErasePage((uint32_t *)EFM32_INFOBLOCK); //擦除information 的USER DATA 整个页。
+//      
+//      MSC_WriteWord((uint32_t *)EFM32_INFOBLOCK, inforDataW, 4);//写入“EWM0”
+//      
+//      CalcInsideFlashCRCandWrIn();//把片内flash中的数据的CRC计算出来，并写入到最后4个字节
+//      
+//      BOOT_boot();//跳转到app的起始地址运行
+//
+//  }
+	
+
+	
+
+   
+  
+  while(1);//loader是永远不会执行到这里，否则系统就死在loader中了
+/*
+  该句不能要，如果第一次烧写，片外flash中没有数据，会导致上面文件头CRC的检测通过
+  但是，有没有合适的文件头，程序就会退到这里，那么系统就永远死到loader中出不去。
+  解决办法是在上面switch中的default中加上dealError（），使系统自动调转到MCU内部CRC检测那里，
+  判断是要执行App还是复位。
+  */
+      
+}
+
+
+

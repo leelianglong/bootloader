@@ -1,0 +1,486 @@
+###############################################################################
+#                                                                             #
+# IAR ELF Linker V6.60.1.5097/W32 for ARM               11/Sep/2014  17:39:51 #
+# Copyright 2007-2013 IAR Systems AB.                                         #
+#                                                                             #
+#    Output file  =  C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\u #
+#                    sbhhidkbd\Release\Exe\bootloader.out                     #
+#    Map file     =  C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\u #
+#                    sbhhidkbd\Release\List\bootloader.map                    #
+#    Command line =  "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\BLE_LEUART_DMA.o"                 #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\boot.o"                           #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\crc.o"                            #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\dmactrl.o"                        #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\em_assert.o"                      #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\em_cmu.o"                         #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\em_dma.o"                         #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\em_ebi.o"                         #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\em_emu.o"                         #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\em_gpio.o"                        #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\em_int.o"                         #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\em_letimer.o"                     #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\em_leuart.o"                      #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\em_msc.o"                         #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\em_system.o"                      #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\em_timer.o"                       #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\em_usart.o"                       #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\em_wdog.o"                        #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\GlobalData.o"                     #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\m25pxx.o"                         #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\MyMain.o"                         #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\retargetio.o"                     #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\retargetserial.o"                 #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\startup_efm32wg.o"                #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Obj\system_efm32wg.o" --redirect      #
+#                    _Printf=_PrintfFull --redirect _Scanf=_ScanfFull -o      #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\Exe\bootloader.out" --map             #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    usbhhidkbd\Release\List\bootloader.map" --config         #
+#                    "C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\ #
+#                    EFM32-ram.icf" --entry __iar_program_start --inline      #
+#                    --vfe                                                    #
+#                                                                             #
+#                                                                             #
+###############################################################################
+
+*******************************************************************************
+*** MESSAGES
+***
+
+
+  place in RAM_region   { readonly, readwrite , block CSTACK };
+  ^
+"C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\EFM32-ram.icf",22  Warning[Lp005]: 
+          placement includes a mix of sections with content (example
+          "ro data section .data_init in BLE_LEUART_DMA.o") and sections
+          without content (example "rw data section .data in BLE_LEUART_DMA.o")
+
+  place in RAM_region   { readonly, readwrite , block CSTACK };
+  ^
+"C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\EFM32-ram.icf",22  Warning[Lp006]: 
+          placement includes a mix of writable sections (example
+          "rw data section .data in BLE_LEUART_DMA.o") and non-writable
+          sections (example "ro data section .data_init in BLE_LEUART_DMA.o")
+
+
+*******************************************************************************
+*** RUNTIME MODEL ATTRIBUTES
+***
+
+CppFlavor       = *
+__SystemLibrary = DLib
+
+
+*******************************************************************************
+*** PLACEMENT SUMMARY
+***
+
+"A1":  place at 0x20000000 { section .intvec };
+"P1":  place in [from 0x20000000 to 0x20008000] { ro, rw, block CSTACK };
+
+  Section            Kind        Address    Size  Object
+  -------            ----        -------    ----  ------
+"A1":                                       0xe0
+  .intvec            ro code  0x20000000    0xe0  startup_efm32wg.o [1]
+                            - 0x200000e0    0xe0
+
+"P1", part 1 of 2:                        0x4cd8
+  .text              ro code  0x200000e0   0xa7c  MyMain.o [1]
+  .text              ro code  0x20000b5c   0x850  em_cmu.o [1]
+  .text              ro code  0x200013ac    0x7e  em_letimer.o [1]
+  .text              ro code  0x2000142a    0x2e  copy_init3.o [4]
+  .text              ro code  0x20001458     0x6  ABImemclr4.o [4]
+  .text              ro code  0x2000145e    0x22  zero_init3.o [4]
+  .text              ro code  0x20001480    0x6c  em_msc.o [1]
+  .text              ro code  0x200014ec     0x8  GlobalData.o [1]
+  .text              ro code  0x200014f4    0x8c  em_wdog.o [1]
+  .text              ro code  0x20001580   0x50c  m25pxx.o [1]
+  .text              ro code  0x20001a8c    0x30  crc.o [1]
+  .text              ro code  0x20001abc    0xf8  boot.o [1]
+  .text              ro code  0x20001bb4    0x66  ABImemset.o [4]
+  .text              ro code  0x20001c1c   0x5b0  BLE_LEUART_DMA.o [1]
+  .text              ro code  0x200021cc    0x76  ABImemcpy_unaligned.o [4]
+  .text              ro code  0x20002244   0x184  system_efm32wg.o [1]
+  .text              ro code  0x200023c8    0x14  em_emu.o [1]
+  .text              ro code  0x200023dc    0x32  ABImemset48.o [4]
+  .text              ro code  0x20002410    0xd6  em_gpio.o [1]
+  .text              ro code  0x200024e8    0xd6  em_usart.o [1]
+  .text              ro code  0x200025c0    0xc2  em_leuart.o [1]
+  .text              ro code  0x20002684   0x224  em_dma.o [1]
+  .text              ro code  0x200028a8    0x44  retargetserial.o [1]
+  .text              ro code  0x200028ec    0x28  data_init.o [4]
+  .iar.init_table    const    0x20002914    0x24  - Linker created -
+  .text              ro code  0x20002938    0x1a  cmain.o [4]
+  .text              ro code  0x20002952     0x4  exit.o [3]
+  .text              ro code  0x20002958     0xa  cexit.o [4]
+  .text              ro code  0x20002964     0xc  XXexit.o [4]
+  .text              ro code  0x20002970    0x10  startup_efm32wg.o [1]
+  .text              ro code  0x20002980     0xc  cstartup_M.o [4]
+  .text              ro code  0x2000298c     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002990     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002994     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002998     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x2000299c     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029a0     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029a4     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029a8     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029ac     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029b0     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029b4     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029b8     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029bc     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029c0     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029c4     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029c8     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029cc     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029d0     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029d4     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029d8     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029dc     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029e0     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029e4     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029e8     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029ec     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029f0     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029f4     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029f8     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x200029fc     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a00     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a04     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a08     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a0c     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a10     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a14     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a18     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a1c     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a20     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a24     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a28     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a2c     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a30     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a34     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a38     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a3c     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a40     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a44     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a48     0x4  startup_efm32wg.o [1]
+  .text              ro code  0x20002a4c     0x4  startup_efm32wg.o [1]
+  .rodata            const    0x20002a50     0x0  zero_init3.o [4]
+  .rodata            const    0x20002a50     0x0  copy_init3.o [4]
+  CSTACK                      0x20002a50  0x2000  <Block>
+    CSTACK           uninit   0x20002a50  0x2000  <Block tail>
+  P1 s0                       0x20004a50   0x1b4  <Init block>
+    .textrw          inited   0x20004a50   0x120  em_msc.o [1]
+    .data            inited   0x20004b70    0x43  BLE_LEUART_DMA.o [1]
+    .data            inited   0x20004bb4    0x20  MyMain.o [1]
+    .data            inited   0x20004bd4    0x18  GlobalData.o [1]
+    .data            inited   0x20004bec     0xc  system_efm32wg.o [1]
+    .data            inited   0x20004bf8     0x8  BLE_LEUART_DMA.o [1]
+    .data            inited   0x20004c00     0x4  m25pxx.o [1]
+  Initializer bytes  ro data  0x20004c04   0x1b4  <for P1 s0>
+                            - 0x20004db8  0x4cd8
+
+"P1", part 2 of 2:                         0x39c
+  .bss               zero     0x20004e00   0x180  dmactrl.o [1]
+  .bss               zero     0x20004f80    0xa0  BLE_LEUART_DMA.o [1]
+  .bss               zero     0x20005020    0x80  m25pxx.o [1]
+  .bss               zero     0x200050a0    0x5c  GlobalData.o [1]
+  .bss               zero     0x200050fc    0x4c  BLE_LEUART_DMA.o [1]
+  .bss               zero     0x20005148    0x24  GlobalData.o [1]
+  .bss               zero     0x2000516c    0x14  retargetserial.o [1]
+  .bss               zero     0x20005180     0xc  BLE_LEUART_DMA.o [1]
+  .bss               zero     0x2000518c     0x8  MyMain.o [1]
+  .bss               zero     0x20005194     0x4  em_int.o [1]
+  .bss               zero     0x20005198     0x2  em_emu.o [1]
+  .bss               zero     0x2000519a     0x1  m25pxx.o [1]
+                            - 0x2000519b   0x39b
+
+
+*******************************************************************************
+*** INIT TABLE
+***
+
+          Address     Size
+          -------     ----
+Zero (__iar_zero_init3)
+    1 destination range, total size 0x39b:
+          0x20004e00  0x39b
+
+Copy (__iar_copy_init3)
+    1 source range, total size 0x1b4:
+          0x20004c04  0x1b4
+    1 destination range, total size 0x1b4:
+          0x20004a50  0x1b4
+
+
+
+*******************************************************************************
+*** MODULE SUMMARY
+***
+
+    Module                 ro code  rw code  ro data  rw data
+    ------                 -------  -------  -------  -------
+C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\usbhhidkbd\Release\Obj: [1]
+    BLE_LEUART_DMA.o         1 456                75      323
+    GlobalData.o                 8                24      152
+    MyMain.o                 2 684                33       40
+    boot.o                     248
+    crc.o                       48
+    dmactrl.o                                             384
+    em_cmu.o                 2 128
+    em_dma.o                   548
+    em_emu.o                    20                          2
+    em_gpio.o                  214
+    em_int.o                                                4
+    em_letimer.o               126
+    em_leuart.o                194
+    em_msc.o                   108      288      288
+    em_usart.o                 214
+    em_wdog.o                  140
+    m25pxx.o                 1 292                 4      133
+    retargetserial.o            68                         20
+    startup_efm32wg.o          436
+    system_efm32wg.o           388                12       12
+    ---------------------------------------------------------
+    Total:                  10 320      288      436    1 070
+
+command line: [2]
+    ---------------------------------------------------------
+    Total:
+
+dl7M_tln.a: [3]
+    exit.o                       4
+    ---------------------------------------------------------
+    Total:                       4
+
+rt7M_tl.a: [4]
+    ABImemclr4.o                 6
+    ABImemcpy_unaligned.o      118
+    ABImemset.o                102
+    ABImemset48.o               50
+    XXexit.o                    12
+    cexit.o                     10
+    cmain.o                     26
+    copy_init3.o                46
+    cstartup_M.o                12
+    data_init.o                 40
+    zero_init3.o                34
+    ---------------------------------------------------------
+    Total:                     456
+
+    Gaps                        16                          1
+    Linker created                                36    8 192
+-------------------------------------------------------------
+    Grand Total:            10 796      288      472    9 263
+
+
+*******************************************************************************
+*** ENTRY LIST
+***
+
+Entry                      Address   Size  Type      Object
+-----                      -------   ----  ----      ------
+?main                   0x20002939         Code  Gb  cmain.o [4]
+AppToBoot               0x20002001   0x18  Code  Gb  BLE_LEUART_DMA.o [1]
+BLE_DevChip             0x20005180    0xc  Data  Gb  BLE_LEUART_DMA.o [1]
+BLE_INIT                0x20001f6f   0x5a  Code  Gb  BLE_LEUART_DMA.o [1]
+BLE_ONLINE              0x20004bf8    0x1  Data  Gb  BLE_LEUART_DMA.o [1]
+BLE_Responsed           0x20004bb0    0x1  Data  Gb  BLE_LEUART_DMA.o [1]
+BLE_Update_End          0x20002031   0x7c  Code  Gb  BLE_LEUART_DMA.o [1]
+BOOT_boot               0x20001ac9   0xba  Code  Gb  boot.o [1]
+BOOT_jump               0x20001abd    0xc  Code  Gb  boot.o [1]
+BleLeUartSta            0x20004bfb    0x1  Data  Gb  BLE_LEUART_DMA.o [1]
+BleTxDMADone            0x20001cbb    0xe  Code  Gb  BLE_LEUART_DMA.o [1]
+BootUpdate              0x2000057b   0x66  Code  Gb  MyMain.o [1]
+BootWriteIn             0x2000041f  0x154  Code  Gb  MyMain.o [1]
+CMU_AUXClkGet           0x20000bef   0x54  Code  Lc  em_cmu.o [1]
+CMU_ClockDivGet         0x20000ca5   0xbe  Code  Gb  em_cmu.o [1]
+CMU_ClockEnable         0x20000d65   0xae  Code  Gb  em_cmu.o [1]
+CMU_ClockFreqGet        0x20000e13  0x26a  Code  Gb  em_cmu.o [1]
+CMU_ClockSelectGet      0x2000107d   0xc8  Code  Gb  em_cmu.o [1]
+CMU_ClockSelectSet      0x20001145  0x1a6  Code  Gb  em_cmu.o [1]
+CMU_FlashWaitStateControl
+                        0x20000b83   0x6c  Code  Lc  em_cmu.o [1]
+CMU_FlashWaitStateMax   0x20000b5d   0x26  Code  Lc  em_cmu.o [1]
+CMU_LFClkGet            0x20000c43   0x62  Code  Lc  em_cmu.o [1]
+CMU_OscillatorEnable    0x200012ed   0x52  Code  Gb  em_cmu.o [1]
+CRC_calc                0x20001a8d   0x30  Code  Gb  crc.o [1]
+CSTACK$$Base            0x20002a50          --   Gb  - Linker created -
+CSTACK$$Limit           0x20004a50          --   Gb  - Linker created -
+CalcInsideFlashCRCandWrIn
+                        0x20000329   0x88  Code  Gb  MyMain.o [1]
+CopyRxBuff              0x20004b70   0x40  Data  Gb  BLE_LEUART_DMA.o [1]
+DMA_ActivateBasic       0x20002773   0x28  Code  Gb  em_dma.o [1]
+DMA_CfgChannel          0x2000279b   0x3a  Code  Gb  em_dma.o [1]
+DMA_CfgDescr            0x200027d5   0x36  Code  Gb  em_dma.o [1]
+DMA_IRQHandler          0x20002703   0x70  Code  Gb  em_dma.o [1]
+DMA_Init                0x2000280b   0x34  Code  Gb  em_dma.o [1]
+DMA_Prepare             0x20002685   0x7e  Code  Lc  em_dma.o [1]
+DMA_Reset               0x2000283f   0x30  Code  Gb  em_dma.o [1]
+DealError               0x200003b1   0x6e  Code  Gb  MyMain.o [1]
+DevChip                 0x20004bd4   0x10  Data  Gb  GlobalData.o [1]
+Device                  0x20004be8    0x4  Data  Gb  GlobalData.o [1]
+EMU_UpdateOscConfig     0x200023c9    0xa  Code  Gb  em_emu.o [1]
+EnableLeUart            0x20001fc9   0x38  Code  Gb  BLE_LEUART_DMA.o [1]
+FLASH_CalcPageSize      0x200001a9   0x22  Code  Gb  MyMain.o [1]
+FLASH_POWER_BACK        0x20001961   0x4c  Code  Gb  m25pxx.o [1]
+FLASH_POWER_DOWN        0x20001915   0x4c  Code  Gb  m25pxx.o [1]
+FW_INFO                 0x20004bb4   0x10  Data  Gb  MyMain.o [1]
+FlashCRC                0x200019ad   0x96  Code  Gb  m25pxx.o [1]
+FlashRead               0x2000186f   0x4c  Code  Gb  m25pxx.o [1]
+FlashReadManufacturerIdentification
+                        0x20001825   0x4a  Code  Gb  m25pxx.o [1]
+FlashReadStatusRegister
+                        0x20001745   0x34  Code  Gb  m25pxx.o [1]
+FlashSectorErase        0x200018bb   0x5a  Code  Gb  m25pxx.o [1]
+FlashWriteEnable        0x20001717   0x28  Code  Gb  m25pxx.o [1]
+GPIO_DriveModeSet       0x20002411   0x14  Code  Gb  em_gpio.o [1]
+GPIO_IntConfig          0x20002425   0x4a  Code  Gb  em_gpio.o [1]
+GPIO_PinModeSet         0x20002485   0x62  Code  Gb  em_gpio.o [1]
+GetFlashCapacity        0x20001779   0xac  Code  Gb  m25pxx.o [1]
+GstDevice               0x20005148   0x24  Data  Gb  GlobalData.o [1]
+GstSystemParam          0x200050a0   0x5c  Data  Gb  GlobalData.o [1]
+INT_Enable              0x20001c1d   0x12  Code  Lc  BLE_LEUART_DMA.o [1]
+INT_LockCnt             0x20005194    0x4  Data  Gb  em_int.o [1]
+InsideFlashWR           0x200001cb  0x158  Code  Gb  MyMain.o [1]
+IsFlashBusy             0x200016ff   0x18  Code  Gb  m25pxx.o [1]
+IsFlashPowerOn          0x2000519a    0x1  Data  Gb  m25pxx.o [1]
+LETIMER0_IRQHandler     0x2000014f   0x5a  Code  Gb  MyMain.o [1]
+LETIMER_CompareSet      0x200013ad   0x12  Code  Gb  em_letimer.o [1]
+LETIMER_Init            0x200013bf   0x6c  Code  Gb  em_letimer.o [1]
+LETIMER_setup           0x200000e1   0x6e  Code  Gb  MyMain.o [1]
+LEUART0_IRQHandler      0x20001d5f   0xec  Code  Gb  BLE_LEUART_DMA.o [1]
+LEUARTSentByDma         0x20001e7f   0x78  Code  Gb  BLE_LEUART_DMA.o [1]
+LEUART_BaudrateSet      0x200025c1   0x40  Code  Gb  em_leuart.o [1]
+LEUART_Init             0x20002611   0x48  Code  Gb  em_leuart.o [1]
+LEUART_Reset            0x20002659   0x2a  Code  Gb  em_leuart.o [1]
+LeUartRxBuff            0x200050fc   0x40  Data  Gb  BLE_LEUART_DMA.o [1]
+LeUartTxBuff            0x20004f80   0xa0  Data  Gb  BLE_LEUART_DMA.o [1]
+LeUartTxCount           0x20004bfe    0x2  Data  Gb  BLE_LEUART_DMA.o [1]
+LeUartWorkTimeCount     0x20004bfc    0x2  Data  Gb  BLE_LEUART_DMA.o [1]
+LeuartConfig            0x20001c2f   0x8c  Code  Gb  BLE_LEUART_DMA.o [1]
+M25Pxx_INIT             0x20001581   0xce  Code  Gb  m25pxx.o [1]
+MSC_ErasePage           0x20004a51   0x5a  Code  Gb  em_msc.o [1]
+MSC_Init                0x20001481   0x5a  Code  Gb  em_msc.o [1]
+MSC_WriteWord           0x20004abd   0xaa  Code  Gb  em_msc.o [1]
+McuFwUpdate             0x200005e1   0x76  Code  Gb  MyMain.o [1]
+MyBLE_Update_Start      0x20002019   0x12  Code  Gb  BLE_LEUART_DMA.o [1]
+MyLEUARTSentByDma       0x20001ef7   0x6c  Code  Gb  BLE_LEUART_DMA.o [1]
+NewBleFwUpdate          0x200007f7  0x24c  Code  Gb  MyMain.o [1]
+ReadBLEFwFromExflashAndWrIn
+                        0x2000067d  0x174  Code  Gb  MyMain.o [1]
+Region$$Table$$Base     0x20002914          --   Gb  - Linker created -
+Region$$Table$$Limit    0x20002938          --   Gb  - Linker created -
+SPI_Read_Bytes          0x200016d3   0x2c  Code  Gb  m25pxx.o [1]
+SPI_Send_And_Read_Byte  0x2000164f   0x26  Code  Gb  m25pxx.o [1]
+SPI_Send_And_Read_Bytes
+                        0x20001675   0x34  Code  Gb  m25pxx.o [1]
+SPI_Send_Bytes          0x200016a9   0x2a  Code  Gb  m25pxx.o [1]
+SetupLeuartDma          0x20001cc9   0x96  Code  Gb  BLE_LEUART_DMA.o [1]
+SysCtlDelay             0x200014ed    0x8  Code  Gb  GlobalData.o [1]
+SystemCoreClock         0x20004bf4    0x4  Data  Gb  system_efm32wg.o [1]
+SystemCoreClockGet      0x20002245   0xa6  Code  Gb  system_efm32wg.o [1]
+SystemHFClockGet        0x200022eb   0x7e  Code  Gb  system_efm32wg.o [1]
+SystemHFXOClock         0x20004bec    0x4  Data  Lc  system_efm32wg.o [1]
+SystemHFXOClockGet      0x20002369    0x2  Code  Gb  system_efm32wg.o [1]
+SystemInit              0x20002371    0xc  Code  Gb  system_efm32wg.o [1]
+SystemLFRCOClockGet     0x2000237d    0x2  Code  Gb  system_efm32wg.o [1]
+SystemLFXOClock         0x20004bf0    0x4  Data  Lc  system_efm32wg.o [1]
+SystemLFXOClockGet      0x2000238b    0x2  Code  Gb  system_efm32wg.o [1]
+SystemParam             0x20004be4    0x4  Data  Gb  GlobalData.o [1]
+SystemULFRCOClockGet    0x20002385    0x6  Code  Gb  system_efm32wg.o [1]
+TX_DAM_CALLBACK         0x2000513c    0xc  Data  Gb  BLE_LEUART_DMA.o [1]
+TxDone                  0x20004bfa    0x1  Data  Gb  BLE_LEUART_DMA.o [1]
+USART1_RX_IRQHandler    0x200028a9   0x3c  Code  Gb  retargetserial.o [1]
+USART_InitSync          0x200024e9   0xae  Code  Gb  em_usart.o [1]
+USART_Rx                0x200025b1    0x8  Code  Gb  em_usart.o [1]
+WDOG_Enable             0x200014f5   0x10  Code  Gb  em_wdog.o [1]
+WDOG_Feed               0x20001505    0xe  Code  Gb  em_wdog.o [1]
+WDOG_Init               0x20001513   0x5a  Code  Gb  em_wdog.o [1]
+WaitLastTxDone          0x20001e4b   0x34  Code  Gb  BLE_LEUART_DMA.o [1]
+WriteCC254xFlash        0x200020ad   0x8e  Code  Gb  BLE_LEUART_DMA.o [1]
+__Vectors               0x20000000          --   Gb  startup_efm32wg.o [1]
+__Vectors_End           0x200000e0         Data  Gb  startup_efm32wg.o [1]
+__Vectors_Size {Abs}    0x000000e0          --   Gb  startup_efm32wg.o [1]
+__aeabi_memclr4         0x20001459         Code  Gb  ABImemclr4.o [4]
+__aeabi_memset          0x20001bb5         Code  Gb  ABImemset.o [4]
+__cmain                 0x20002939         Code  Gb  cmain.o [4]
+__exit                  0x20002965         Code  Gb  XXexit.o [4]
+__iar_Memset            0x20001bb5         Code  Gb  ABImemset.o [4]
+__iar_Memset4_word      0x200023dd         Code  Gb  ABImemset48.o [4]
+__iar_Memset8_word      0x200023dd         Code  Gb  ABImemset48.o [4]
+__iar_Memset_word       0x20001bbd         Code  Gb  ABImemset.o [4]
+__iar_copy_init3        0x2000142b   0x2e  Code  Gb  copy_init3.o [4]
+__iar_data_init3        0x200028ed   0x28  Code  Gb  data_init.o [4]
+__iar_program_start     0x20002981         Code  Gb  cstartup_M.o [4]
+__iar_unaligned___aeabi_memcpy
+                        0x200021cd         Code  Gb  ABImemcpy_unaligned.o [4]
+__iar_unaligned___aeabi_memcpy4
+                        0x200021ed         Code  Gb  ABImemcpy_unaligned.o [4]
+__iar_unaligned___aeabi_memcpy8
+                        0x200021ed         Code  Gb  ABImemcpy_unaligned.o [4]
+__iar_zero_init3        0x2000145f   0x22  Code  Gb  zero_init3.o [4]
+__vector_table          0x20000000         Data  Gb  startup_efm32wg.o [1]
+__vector_table_0x1c     0x2000001c         Data  Gb  startup_efm32wg.o [1]
+_call_main              0x20002945         Code  Gb  cmain.o [4]
+_exit                   0x20002959         Code  Gb  cexit.o [4]
+_main                   0x2000294f         Code  Gb  cmain.o [4]
+bleCount                0x20004bc5    0x1  Data  Gb  MyMain.o [1]
+bleStFlg                0x20004bb2    0x1  Data  Gb  BLE_LEUART_DMA.o [1]
+bootCount               0x20004bc6    0x1  Data  Gb  MyMain.o [1]
+cmuStatus               0x20005198    0x2  Data  Lc  em_emu.o [1]
+crccheck                0x20004bb1    0x1  Data  Gb  BLE_LEUART_DMA.o [1]
+dmaControlBlock         0x20004e00  0x180  Data  Gb  dmactrl.o [1]
+efmCount                0x20004bc4    0x1  Data  Gb  MyMain.o [1]
+exit                    0x20002953    0x4  Code  Gb  exit.o [3]
+flashPageSize           0x20005190    0x4  Data  Gb  MyMain.o [1]
+flashSize               0x2000518c    0x4  Data  Gb  MyMain.o [1]
+init                    0x20004bc8    0xc  Data  Gb  MyMain.o [1]
+insert_zero_number      0x20004bf9    0x1  Data  Gb  BLE_LEUART_DMA.o [1]
+main                    0x20000a49   0x96  Code  Gb  MyMain.o [1]
+pFlashInfo              0x20004c00    0x4  Data  Gb  m25pxx.o [1]
+rxBuffer                0x2000516c    0x8  Data  Lc  retargetserial.o [1]
+rxCount                 0x2000517c    0x4  Data  Lc  retargetserial.o [1]
+rxReadIndex             0x20005174    0x4  Data  Lc  retargetserial.o [1]
+rxWriteIndex            0x20005178    0x4  Data  Lc  retargetserial.o [1]
+systemStatus            0x20005020   0x80  Data  Gb  m25pxx.o [1]
+
+
+[1] = C:\Users\T420\Desktop\bootloader(0830)\proj\usbhid\iar\usbhhidkbd\Release\Obj
+[2] = command line
+[3] = dl7M_tln.a
+[4] = rt7M_tl.a
+
+  10 796 bytes of readonly  code memory
+     288 bytes of readwrite code memory
+     472 bytes of readonly  data memory
+   9 263 bytes of readwrite data memory
+
+Errors: none
+Warnings: 2

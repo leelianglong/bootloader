@@ -1,0 +1,317 @@
+#include <string.h>
+#include <stdbool.h>
+#include "efm32.h"
+#include "boot.h"
+#include "em_chip.h"
+#include "em_cmu.h"
+#include "em_emu.h"
+#include "em_letimer.h"
+#include "em_timer.h"
+#include "em_adc.h"
+#include "em_wdog.h"
+#include "em_rmu.h"
+#include "em_rmu.h"
+#include "GlobalData.h"
+
+
+
+#include "bootld.h"
+
+#include "main.h"
+#include "res.h"
+
+//After reset, the HFRCO frequency is 14 MHz
+#define CORE_FREQ_HIGH cmuHFRCOBand_14MHz
+#define CORE_FREQ_LOW  cmuHFRCOBand_1MHz
+
+#define BAT_GO_LEVEL 3.5 //3.6
+
+//定义LED
+#define LED_GPIOPORT  (gpioPortC)
+#define LED_PIN   (10)
+
+#define LED_TOGGLE()   GPIO_PinOutToggle(LED_GPIOPORT, LED_PIN)
+#define LED_ON()       GPIO_PinOutSet(LED_GPIOPORT,LED_PIN )
+#define LED_OFF()      GPIO_PinOutClear(LED_GPIOPORT,LED_PIN )
+
+
+//这个是绝对地址访问，需要在linker文件中在加上
+//place at address mem: 0x000097FC    { readonly section ConstSection1 };就可以在具体位置上写上版本号。
+
+#pragma location = "ConstSection1"
+__root const char abc1[4] = {0, 0, BOOT_VER_M , BOOT_VER_S};
+
+
+void initGPIO(void)
+{
+
+	CMU_ClockEnable(cmuClock_GPIO, true);//打开GPIO的时钟
+	GPIO_PinModeSet(KEY_GPIOPORT, KEY_PIN, gpioModeInputPull, 1);
+	GPIO_PinModeSet(LED_GPIOPORT, LED_PIN, gpioModePushPull, 0); //设置LED模式
+	GPIO_IntConfig(KEY_GPIOPORT, KEY_PIN, false, true, true);
+
+	NVIC_ClearPendingIRQ(GPIO_EVEN_IRQn);
+	NVIC_EnableIRQ(GPIO_EVEN_IRQn);
+	//NVIC_EnableIRQ(GPIO_ODD_IRQn);
+
+	GPIO_PinModeSet(AFE_POWER_CON_PORT, AFE_POWER_CON_PIN, gpioModePushPull, 0); //把AFE的电也关掉了
+	BOTTOM_POWER_OFF();
+
+	//BOTTOM_POWER_ON();
+
+	GPIO_PinModeSet(BACKLIGHT_PORT, BACKLIGHT_PIN, gpioModePushPull, 0);
+	BACKLIGHT_ON();
+	BACKLIGHT_OFF();
+
+	GPIO_PinModeSet(MOTOR_PORT, MOTOR_PIN, gpioModePushPull, 0);
+	MOTOR_ON();
+	MOTOR_OFF();
+
+	EXTVCC_ON();
+	EXTVCC_OFF();
+
+	GPIO_PinModeSet(PWM1_PORT, PWM1_PIN, gpioModePushPull, 0);
+	GPIO_PinModeSet(PWM2_PORT, PWM2_PIN, gpioModePushPull, 0);
+	PWM1_OFF();
+	PWM2_OFF();
+//上面主要是关闭一些外设
+
+}
+
+
+long bat_val[4] = {0, 0, 0, 0}, bat_avg = 0; //电池数据
+
+float BAT_VCC = 0;
+
+unsigned char bat_index = 0, bat_checked = 0;
+
+int timerCount = 0;//定时器计数器
+
+/* 976 Hz -> 1Mhz (clock frequency) / 1024 (prescaler)
+  Setting TOP to 488 results in an overflow each 0.1 seconds */
+
+#define TOP 100
+
+
+
+//低功耗定时器中断
+void LETIMER0_IRQHandler(void)
+{
+	LETIMER_IntClear(LETIMER0, LETIMER_IF_COMP0); //清除比较器0的中断标志
+	timerCount++;
+
+
+	while (ADC0->STATUS & ADC_STATUS_SINGLEACT);
+
+	bat_val[bat_index++] = (long)ADC_DataSingleGet(ADC0); //返回单次转换值。
+
+	if(bat_index >= 4) //当进来该中断4次，说明电池检测到了
+	{
+		bat_index = 0;
+		bat_checked = 1; //说明电池检测到了
+	}
+
+	ADC_Start(ADC0, adcStartSingle);//开始扫描或单次转发，@p1,ADC类型，@p2ADC开始的类型。
+
+}
+
+const	ADC_InitSingle_TypeDef BAT_ADC_INIT =
+{
+	adcPRSSELCh0, /*   PRS ch0 (if enabled). */ 		   \
+	adcAcqTime8,  /* 1 ADC_CLK cycle acquisition time. */	  \
+	adcRef2V5,	/* 2.5V internal reference. */ 		  \
+	adcRes12Bit, /* 12 bit resolution. */			   \
+	adcSingleInpCh7, /* CH0 input selected. */		   \
+	false, /* Single ended input. */			   \
+	false,		/* PRS disabled. */ 		\
+	false,	/* Right adjust. */ 								 \
+	false  /* Deactivate conversion after one scan sequence. */ \
+};
+
+void ADC_INIT(void)
+{
+	CMU_ClockEnable(cmuClock_ADC0, true);
+
+	ADC_Init_TypeDef init = ADC_INIT_DEFAULT;//该值是宏定义。
+
+	/* Init common settings for both single conversion and scan mode */
+	init.timebase = ADC_TimebaseCalc(0);//计算时基，这里设置为0表示用当前设置的高频外设时钟
+
+	// init.lpfMode =adcLPFilterRC;//adcLPFilterDeCap;
+
+	//init.warmUpMode=adcWarmupKeepScanRefWarm;
+
+	/* Set ADC clock to 7 MHz, use default HFPERCLK */
+	init.prescale = ADC_PrescaleCalc(7000000, 0);
+
+	/* Set oversampling rate */
+	//init.ovsRateSel = adcOvsRateSel32;//adcOvsRateSel32;
+
+	ADC_Init(ADC0, &init);
+
+	ADC_InitSingle(ADC0, &BAT_ADC_INIT);
+
+}
+
+//充电状态初始化
+void CHARGER_STA_INIT(void)
+{
+	/* Enable GPIO */
+	CMU_ClockEnable(cmuClock_GPIO, true);
+
+	/* Configure GPIO port A2 as Key input ，PF4为充电状态引脚*/
+	GPIO_PinModeSet(CHARGER_STA_GPIOPORT, CHARGER_STA_PIN, gpioModeInputPull, 1);
+
+	GPIO_IntConfig(CHARGER_STA_GPIOPORT, CHARGER_STA_PIN, true, true, true);
+
+	GPIO_IntClear(1 << CHARGER_STA_PIN);
+
+	/* Enabling Interrupt from GPIO_EVEN */
+	NVIC_EnableIRQ(GPIO_EVEN_IRQn);//打开中断使能
+
+}
+
+unsigned char Charging = 0;
+
+void GPIO_EVEN_IRQHandler(void)
+{
+	uint32_t status;
+//充电中断事件处理。
+	status = GPIO->IF;
+	GPIO->IFC = status;
+
+	if (status & (1 << CHARGER_STA_PIN))
+	{
+		if(GPIO_PinInGet(CHARGER_STA_GPIOPORT, CHARGER_STA_PIN) == 0) //如果充电引脚还是低的话，表示还在冲。
+			Charging = 1;
+		else
+			Charging = 0;
+	}
+}
+
+
+unsigned char charging_Counter = 0; //充电计算器。
+
+/**************************************************************************//**
+ * The main entry point.
+ *****************************************************************************/
+
+int main(void)
+{
+	/*初始化看门狗结构体*/
+	WDOG_Init_TypeDef init =
+	{
+		.enable     = true,               /* Start watchdog when init done */
+		.debugRun   = false,              /* WDOG not counting during debug halt */
+		.em2Run     = true,               /* WDOG counting when in EM2 */
+		.em3Run     = true,               /* WDOG counting when in EM3 */
+		.em4Block   = false,              /* EM4 can be entered */
+		.swoscBlock = false,              /* Do not block disabling LFRCO/LFXO in CMU */
+		.lock       = false,              /* Do not lock WDOG configuration (if locked, reset needed to unlock) */
+		.clkSel     = wdogClkSelULFRCO,   /* Select 1kHZ WDOG oscillator */
+		.perSel     = wdogPeriod_4k,      /* Set the watchdog period to 4097 clock periods (ie 大约4s seconds)*/ //persel=10
+	};
+
+	//T = (2^(3+perSel)+1)/f;这里f表示所选择的看门狗时钟，这里f=1Khz,perSel = 10;按照该该表达式计算看门狗周期是8s
+
+	CHIP_Init();
+
+	initGPIO();
+
+	//---------------------LETimer0配置 ，主要用于led在不同状况下的闪烁频率，以及喂狗频率
+	CMU_OscillatorEnable(cmuOsc_LFXO, true, true);//等待低频晶振工作正常
+	CMU_ClockSelectSet(cmuClock_LFA, cmuSelect_LFXO); //低能量定时器需要外部低频晶振作为时钟源。
+	CMU_ClockEnable(cmuClock_CORELE, true);//RTC和所有的低功耗外设都要用CORELF，同时也是看门狗的时钟源
+	CMU_ClockEnable(cmuClock_LETIMER0, true); //在使能自己的时钟
+
+	LETIMER_Init_TypeDef leTimerinit = LETIMER_INIT_DEFAULT;//先进行默认初始化
+
+	leTimerinit.debugRun = true;
+	leTimerinit.comp0Top = true;
+	LETIMER_IntEnable(LETIMER0, LETIMER_IF_COMP0); //比较器0中断使能
+	NVIC_EnableIRQ(LETIMER0_IRQn);//打开NVIC中断
+	LETIMER_CompareSet(LETIMER0, 0, 32768 / 10); //10HZ
+	LETIMER_Init(LETIMER0, &leTimerinit);
+
+
+	WDOG_Init(&init);//从这里开始后，看门狗就已经运行了。
+
+	//====================================
+
+	ADC_INIT();
+
+	SysCtlDelay(8000);//给ADC时间，使其完成初始化操作。
+
+	//====================================
+	CHARGER_STA_INIT();
+
+	if(GPIO_PinInGet(CHARGER_STA_GPIOPORT, CHARGER_STA_PIN) == 0)
+		Charging = 1; //表示还在充电
+	else
+		Charging = 0;	//没插电时直接到这里
+
+	//  ===================================
+
+	while(1)
+	{
+		EMU_EnterEM2(true);
+
+		WDOG_Feed();
+
+
+		if(bat_checked)//在定时器1的中断中进行电池检测，如果检测到电池
+		{
+			bat_checked = 0;
+			bat_avg = 0;
+
+			for(int i = 0; i < 4; i++)
+			{
+				bat_avg += bat_val[i]; //bat_val[]是全局变量，在timer1的中断中把每次电池采样值都放在这里。
+			}
+
+			bat_avg = bat_avg / 4;
+
+			BAT_VCC = 2 * bat_avg * 2.5 / 4096;
+		}
+
+		if(BAT_VCC > BAT_GO_LEVEL) //检测电压
+			break;
+		else if(Charging == 1)//显示充电的画面
+		{
+			if(timerCount > 4)
+			{
+				timerCount = 0;
+				LED_TOGGLE();
+			}
+		}
+		else
+		{
+			if(timerCount >= 19)
+			{
+				timerCount = 0;
+				LED_TOGGLE();
+			}
+		}
+	}
+
+	NVIC_DisableIRQ(GPIO_EVEN_IRQn);
+	NVIC_DisableIRQ(GPIO_ODD_IRQn);
+
+	__set_MSP( ( 0x20000000 + sizeof( bootloader ) + 0x800 ) & 0xFFFFFFF0 );//这里最后与“0xfffffff0与”主要是为了对齐到256字节上
+	//设置主堆栈指针
+
+
+	WDOG_Feed();//在搬移前总是喂狗一次
+
+	/* Load the entire bootloader into SRAM. */
+	memcpy( (void*)0x20000000, bootloader, sizeof( bootloader ) );//这里bootloader是一个数组在bootld.h,它是usbhhidkbd工程的bin文件转换成的.hex文件。
+
+	/* Start executing the bootloader. */
+
+	WDOG_Enable(false);
+
+	SysCtlDelay(50);//关看门狗需要时间？
+
+	BOOT_jump( *(uint32_t*)0x20000000, *(uint32_t*)0x20000004 );//@p1,是sp,@p2,是pc，现在程序就从0x20000004执行。
+	/*复位中断向量的地址是00000004，这就是为什么把PC设置成200000004*/
+}

@@ -1,0 +1,12 @@
+---- DevChip Matches (12 in 2 files) ----
+Config.h (f:\develop board\qs_proj\efm32\firmware\usb-hid-bootloader-20130310\usb-hid-bootloader\boards\efm32gg990-stk\examples\usbhid\boot):extern union _CHIP DevChip;
+Main.c (f:\develop board\qs_proj\efm32\firmware\usb-hid-bootloader-20130310\usb-hid-bootloader\boards\efm32gg990-stk\examples\usbhid):union _CHIP DevChip;
+Main.c (f:\develop board\qs_proj\efm32\firmware\usb-hid-bootloader-20130310\usb-hid-bootloader\boards\efm32gg990-stk\examples\usbhid):    DevChip.EFM32DeviceInfo[i] = *((unsigned char *)(EFM32_ADDRESS + i));
+Main.c (f:\develop board\qs_proj\efm32\firmware\usb-hid-bootloader-20130310\usb-hid-bootloader\boards\efm32gg990-stk\examples\usbhid):  FlashCRC = CRC_calc((uint8_t *)BOOTLOADER_SIZE, (uint8_t *)(DevChip.Device.memFlash*1024 - 8));
+Main.c (f:\develop board\qs_proj\efm32\firmware\usb-hid-bootloader-20130310\usb-hid-bootloader\boards\efm32gg990-stk\examples\usbhid):  printf("EFM32 Whole Flash CRC CheckSum:%x, ReadOut:%x\r\n", FlashCRC, *((uint32_t *)(DevChip.Device.memFlash*1024 - 4)));
+Main.c (f:\develop board\qs_proj\efm32\firmware\usb-hid-bootloader-20130310\usb-hid-bootloader\boards\efm32gg990-stk\examples\usbhid):  //if ((FlashCRC == *((uint32_t *)(DevChip.Device.memFlash*1024 - 4)))&&(KeyMode == false)) { 
+Main.c (f:\develop board\qs_proj\efm32\firmware\usb-hid-bootloader-20130310\usb-hid-bootloader\boards\efm32gg990-stk\examples\usbhid):  if ((FlashCRC == *((uint32_t *)(DevChip.Device.memFlash*1024 - 4)))) {
+Main.c (f:\develop board\qs_proj\efm32\firmware\usb-hid-bootloader-20130310\usb-hid-bootloader\boards\efm32gg990-stk\examples\usbhid):  memcpy((&gHIDInPacket.Packet.Data[1]), DevChip.EFM32DeviceInfo, sizeof(DevChip.EFM32DeviceInfo));
+Main.c (f:\develop board\qs_proj\efm32\firmware\usb-hid-bootloader-20130310\usb-hid-bootloader\boards\efm32gg990-stk\examples\usbhid):        CheckSum = CRC_calc((uint8_t *)BOOTLOADER_SIZE, (uint8_t *)(DevChip.Device.memFlash*1024 - 8));
+Main.c (f:\develop board\qs_proj\efm32\firmware\usb-hid-bootloader-20130310\usb-hid-bootloader\boards\efm32gg990-stk\examples\usbhid):        MSC_WriteWord((uint32_t *)(DevChip.Device.memFlash*1024 - 4), (uint32_t *)&CheckSum, 4);
+Main.c (f:\develop board\qs_proj\efm32\firmware\usb-hid-bootloader-20130310\usb-hid-bootloader\boards\efm32gg990-stk\examples\usbhid):        printf("Read Out:%x\r\n", *((uint32_t *)(DevChip.Device.memFlash*1024 - 4)));
